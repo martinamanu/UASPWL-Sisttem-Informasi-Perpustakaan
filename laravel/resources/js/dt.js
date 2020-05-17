@@ -1,0 +1,10 @@
+// var $       = require( 'jquery' );
+var dt      = require( 'datatables.net' )( window, $ );
+var dtbs4      = require('datatables.net-bs4')( window, $ );
+var dtres      = require( 'datatables.net-responsive' )( window, $ );
+var dtresbs4      = require('datatables.net-responsive-bs4')( window, $ );
+// require( 'jquery' );
+// require( 'datatables.net' )();
+// require('datatables.net-bs4')();
+// require( 'datatables.net-responsive' )();
+// require('datatables.net-responsive-bs4')();

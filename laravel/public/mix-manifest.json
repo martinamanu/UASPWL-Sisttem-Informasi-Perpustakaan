@@ -1,0 +1,10 @@
+{
+    "/js/app.js": "/js/app.js",
+    "/css/app.css": "/css/app.css",
+    "/css/dt.css": "/css/dt.css",
+    "/js/dt.js": "/js/dt.js",
+    "/js/manifest.js": "/js/manifest.js",
+    "/js/vendor.js": "/js/vendor.js",
+    "/js/datatables.js": "/js/datatables.js",
+    "/css/datatables.css": "/css/datatables.css"
+}

@@ -1,0 +1,13 @@
+cara menyiapkan database
+- di .env atur alamat server, user, password, database mysql 
+- buka cmd/terminal
+- arah kan ke folder ini (ex: cd laravel)
+- ketik "php artisan migrate"
+- ketik "npm install"
+- ketik "npm run prod"
+
+admin
+email : admin@bla.com
+password : 12345678
+
+kalau ada masalah bisa WA 081515189349

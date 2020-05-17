@@ -1,0 +1,526 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Models\Buku as ModelsBuku;
+use App\Models\Auth as ModelsAuth;
+use CodeIgniter\Controller;
+
+class Buku extends Controller
+{
+    protected function ambil_post($alamat, $data)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $alamat);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        return curl_exec($ch);
+        curl_close($ch);
+    }
+    protected function ambil_get($alamat)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $alamat);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+        // curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        return curl_exec($ch);
+        curl_close($ch);
+    }
+    public function index_dari_laravel()
+    {
+        $data["title"] = "Daftar Buku Dari Laravel";
+        $data["laravel_active"] = true;
+        $session = \Config\Services::session();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            $model = new ModelsAuth();
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->nama,
+                "token" => $user->getUserFromToken($token)->token,
+            );
+        } else {
+            // $data["token"] = "";
+            return redirect()->to("/auth/login");
+        };
+        $data["auth"] = new Auth();
+        $model = new ModelsBuku();
+        $client = \Config\Services::curlrequest();
+        $res = $this->ambil_get(getenv("laravel.address"));
+        // $res = $client->request("GET", getenv("laravel.address"))->getBody();
+        $data['buku'] = json_decode($res);
+        // dd(json_decode(json_encode($data['buku'])));
+        echo view("layout/head", $data);
+        echo view("buku/home_dari_laravel", $data);
+        echo view("layout/footer");
+    }
+    // public function hapus_dari_laravel($id)
+    // {
+    //     // dd($id);
+    //     $data["title"] = "Hapus Buku Dari Laravel";
+    //     $data["laravel_active"] = true;
+    //     $session = \Config\Services::session();
+    //     if ($session->has("token")) {
+    //         $user = new ModelsAuth();
+    //         $token = $session->get("token");
+    //         $model = new ModelsAuth();
+    //         if (!$model->getUserPriv($token)->can_edit_book) {
+    //             // $this->output->set_status_header('404');
+    //             return $this->response->setStatusCode(404);
+    //         }
+    //         $data["user"] = array(
+    //             "email" => $user->getUserFromToken($token)->email,
+    //             "nama" => $user->getUserFromToken($token)->nama,
+    //             "token" => $user->getUserFromToken($token)->token,
+    //         );
+    //     } else {
+    //         // $data["token"] = "";
+    //         return redirect()->to("/auth/login");
+    //     };
+    //     $data["auth"] = new Auth();
+    //     $model = new ModelsBuku();
+    //     $client = \Config\Services::curlrequest();
+    //     // $datapost = [
+    //     //     "id" => $id
+    //     // ];
+    //     $res = $this->ambil_get(getenv("laravel.address") . "/" . $id);
+    //     $data['buku'] = json_decode($res);
+    //     return redirect()->to("/laravel");
+    //     // dd(json_decode(json_encode($data['buku'])));
+    //     // echo view("layout/head", $data);
+    //     // echo view("buku/home_dari_laravel", $data);
+    //     // echo view("layout/footer");
+    // }
+    public function tambah_dari_laravel()
+    {
+        $data["title"] = "Tambah Buku Dari Laravel";
+        $data["laravel_active"] = true;
+        $session = \Config\Services::session();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            $model = new ModelsAuth();
+            if (!$model->getUserPriv($token)->can_add_book) {
+                // $this->output->set_status_header('404');
+                return $this->response->setStatusCode(404);
+            }
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->nama,
+                "token" => $user->getUserFromToken($token)->token,
+            );
+        } else {
+            // $data["token"] = "";
+            return redirect()->to("/auth/login");
+        };
+
+        // return view("buku/tambah.php");
+        echo view("layout/head", $data);
+        echo view("buku/tambah_dari_laravel", $data);
+        echo view("layout/footer");
+    }
+    public function index()
+    {
+        $data["title"] = "Daftar Buku";
+        $data["buku_active"] = true;
+        $session = \Config\Services::session();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            // $verif = $user->ambil_post(getenv("laravel.address") . "/auth/user", ["token" => $token]);
+            // dd($verif);
+            $model = new ModelsAuth();
+            // dd($model->getUserPriv($token));
+            if (!$model->getUserPriv($token)->can_see_book) {
+                // $this->output->set_status_header('404');
+                return $this->response->setStatusCode(404);
+            }
+            // dd($user->getUserFromToken($token)->api_token);
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->name,
+                "token" => $user->getUserFromToken($token)->api_token,
+            );
+        } else {
+            // $data["token"] = "";
+            return redirect()->to("/auth/login");
+        };
+        $data["auth"] = new Auth();
+        $model = new ModelsBuku();
+        $data['buku'] = $model->getAllBuku();
+        echo view("layout/head", $data);
+        echo view("buku/home", $data);
+        echo view("layout/footer");
+    }
+    public function tambah()
+    {
+        $data["title"] = "Tambah Buku";
+        $data["buku_active"] = true;
+        $session = \Config\Services::session();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            $model = new ModelsAuth();
+            if (!$model->getUserPriv($token)->can_add_book) {
+                // $this->output->set_status_header('404');
+                return $this->response->setStatusCode(404);
+            }
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->nama,
+                "token" => $user->getUserFromToken($token)->token,
+            );
+        } else {
+            // $data["token"] = "";
+            return redirect()->to("/auth/login");
+        };
+
+        // return view("buku/tambah.php");
+        echo view("layout/head", $data);
+        echo view("buku/tambah", $data);
+        echo view("layout/footer");
+    }
+    public function add_dari_laravel()
+    {
+        helper(['form', 'url', 'session']);
+        $data["laravel_active"] = true;
+        $data["title"] = "Tambah Buku";
+        $session = \Config\Services::session();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            $model = new ModelsAuth();
+            if (!$model->getUserPriv($token)->can_add_book) {
+                // $this->output->set_status_header('404');
+                return $this->response->setStatusCode(404);
+            }
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->nama,
+                "token" => $user->getUserFromToken($token)->token,
+            );
+        } else {
+            // $data["token"] = "";
+            return redirect()->to("/auth/login");
+        };
+        $model = new ModelsBuku();
+        $session = \Config\Services::session();
+        $token = $session->get("token");
+        $auth = new ModelsAuth();
+        if (!$auth->getUserPriv($token)->can_add_book) {
+            // $this->output->set_status_header('404');
+            return $this->response->setStatusCode(404);
+        }
+        $validate = $this->validate([
+            "nama_buku" => [
+                "rules" => "required|is_unique[buku.nama_buku]",
+                "errors" => [
+                    "required" => "Nama Buku harus diisi!",
+                    "is_unique" => "Nama Buku sudah ada didalam database!"
+                ]
+            ],
+            "penulis" => [
+                "rules" => "required",
+                "errors" => [
+                    "required" => "Nama Penulis harus diisi!"
+                ]
+            ],
+            "penerbit" => [
+                "rules" => "required",
+                "errors" => [
+                    "required" => "Nama Penerbit harus diisi!"
+                ]
+            ],
+            "jumlah" => [
+                "rules" => "required|integer",
+                "errors" => [
+                    "required" => "Jumlah Buku harus diisi!",
+                    "integer" => "Jumlah Buku harus berupa angka!"
+                ]
+            ],
+        ]);
+        if ($validate) {
+            // dd($this->request);
+            $datajson = array(
+                "nama_buku" => $this->request->getPost("nama_buku"),
+                "penulis" => $this->request->getPost("penulis"),
+                "penerbit" => $this->request->getPost("penerbit"),
+                "jumlah" => $this->request->getPost("jumlah")
+            );
+            // $model->saveBuku($data);
+            $client = \Config\Services::curlrequest();
+            // $datapost = [
+            //     "id" => $id
+            // ];
+            // $ch = curl_init();
+            $output = $this->ambil_post("http://localhost:8000/api/tambah", $datajson);
+            // $res = $client->setBody($datajson)->request("POST", "http://localhost:8000/api/tambah");
+            // dd($output);
+            return redirect()->to("/laravel");
+        } else {
+            $data['validate'] = $validate;
+            echo view("layout/head", $data);
+            echo view("buku/tambah_dari_laravel", $data);
+            echo view("layout/footer");
+        }
+    }
+    public function edit_dari_laravel($id)
+    {
+        // dd($this->request);
+
+        helper(['form', 'url', 'session']);
+
+        $data["title"] = "Edit Buku Dari Laravel";
+        $data["laravel_active"] = true;
+        $session = \Config\Services::session();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            $auth = new ModelsAuth();
+            if (!$auth->getUserPriv($token)->can_edit_book) {
+                return $this->response->setStatusCode(404);
+            }
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->nama,
+                "token" => $user->getUserFromToken($token)->token,
+            );
+        } else {
+            return redirect()->to("/auth/login");
+        };
+
+        $model = new ModelsBuku();
+        $data["buku"] = $this->ambil_get("http://localhost:8000/api/" . $id);
+        echo view("layout/head", $data);
+        echo view("buku/edit_dari_laravel", $data);
+        echo view("layout/footer");
+    }
+    public function save()
+    {
+        helper(['form', 'url', 'session']);
+        $data["buku_active"] = true;
+        $data["title"] = "Tambah Buku";
+        $session = \Config\Services::session();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            $model = new ModelsAuth();
+            if (!$model->getUserPriv($token)->can_add_book) {
+                // $this->output->set_status_header('404');
+                return $this->response->setStatusCode(404);
+            }
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->nama,
+                "token" => $user->getUserFromToken($token)->token,
+            );
+        } else {
+            // $data["token"] = "";
+            return redirect()->to("/auth/login");
+        };
+        $model = new ModelsBuku();
+        $session = \Config\Services::session();
+        $token = $session->get("token");
+        $auth = new ModelsAuth();
+        if (!$auth->getUserPriv($token)->can_add_book) {
+            // $this->output->set_status_header('404');
+            return $this->response->setStatusCode(404);
+        }
+        $validate = $this->validate([
+            "nama_buku" => [
+                "rules" => "required|is_unique[buku.nama_buku]",
+                "errors" => [
+                    "required" => "Nama Buku harus diisi!",
+                    "is_unique" => "Nama Buku sudah ada didalam database!"
+                ]
+            ],
+            "penulis" => [
+                "rules" => "required",
+                "errors" => [
+                    "required" => "Nama Penulis harus diisi!"
+                ]
+            ],
+            "penerbit" => [
+                "rules" => "required",
+                "errors" => [
+                    "required" => "Nama Penerbit harus diisi!"
+                ]
+            ],
+            "jumlah" => [
+                "rules" => "required|integer",
+                "errors" => [
+                    "required" => "Jumlah Buku harus diisi!",
+                    "integer" => "Jumlah Buku harus berupa angka!"
+                ]
+            ],
+        ]);
+        if ($validate) {
+            $data = array(
+                "nama_buku" => $this->request->getPost("nama_buku"),
+                "penulis" => $this->request->getPost("penulis"),
+                "penerbit" => $this->request->getPost("penerbit"),
+                "jumlah" => $this->request->getPost("jumlah")
+            );
+            $model->saveBuku($data);
+            return redirect()->to("/buku");
+        } else {
+            $data['validate'] = $validate;
+            echo view("layout/head", $data);
+            echo view("buku/tambah", $data);
+            echo view("layout/footer");
+        }
+    }
+    public function edit($id)
+    {
+        // dd($this->request);
+
+        helper(['form', 'url', 'session']);
+
+        $data["title"] = "Edit Buku";
+        $data["buku_active"] = true;
+        $session = \Config\Services::session();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            $auth = new ModelsAuth();
+            if (!$auth->getUserPriv($token)->can_edit_book) {
+                return $this->response->setStatusCode(404);
+            }
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->nama,
+                "token" => $user->getUserFromToken($token)->token,
+            );
+        } else {
+            return redirect()->to("/auth/login");
+        };
+
+        $model = new ModelsBuku();
+        $data["buku"] = $model->getBuku($id)->getRow();
+        echo view("layout/head", $data);
+        echo view("buku/edit", $data);
+        echo view("layout/footer");
+    }
+
+    public function update($id)
+    {
+        // dd($this->request);
+        $data["title"] = "Edit Buku";
+
+        helper(['form', 'url', 'session']);
+        $session = \Config\Services::session();
+        $data["buku_active"] = true;
+        $token = $session->get("token");
+        $auth = new ModelsAuth();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            $auth = new ModelsAuth();
+            if (!$auth->getUserPriv($token)->can_edit_book) {
+                return $this->response->setStatusCode(404);
+            }
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->nama,
+                "token" => $user->getUserFromToken($token)->token,
+            );
+        } else {
+            return redirect()->to("/auth/login");
+        };
+        $model = new ModelsBuku();
+        $validate = $this->validate([
+            "nama_buku" => [
+                "rules" => "required|is_unique[buku.nama_buku]",
+                "errors" => [
+                    "required" => "Nama Buku harus diisi!",
+                    "is_unique" => "Nama Buku sudah ada didalam database!"
+                ]
+            ],
+            "penulis" => [
+                "rules" => "required",
+                "errors" => [
+                    "required" => "Nama Penulis harus diisi!"
+                ]
+            ],
+            "penerbit" => [
+                "rules" => "required",
+                "errors" => [
+                    "required" => "Nama Penerbit harus diisi!"
+                ]
+            ],
+            "jumlah" => [
+                "rules" => "required|integer",
+                "errors" => [
+                    "required" => "Jumlah Buku harus diisi!",
+                    "integer" => "Jumlah Buku harus berupa angka!"
+                ]
+            ],
+        ]);
+        if ($validate) {
+            $dataedit = array(
+                "nama_buku" => $this->request->getVar("nama_buku"),
+                "penulis" => $this->request->getVar("penulis"),
+                "penerbit" => $this->request->getVar("penerbit"),
+                "jumlah" => $this->request->getVar("jumlah")
+            );
+            $model->updateBuku($dataedit, $id, $token);
+            return redirect()->to("/buku");
+        } else {
+            $model = new ModelsBuku();
+            $data["buku"] = $model->getBuku($id)->getRow();
+            $data['validate'] = $validate;
+            echo view("layout/head", $data);
+            echo view("buku/edit", $data);
+            echo view("layout/footer");
+        }
+        // return redirect()->to("/buku");
+    }
+    public function hapus($id)
+    {
+        $data["title"] = "Hapus Buku";
+        $data["buku_active"] = true;
+        $session = \Config\Services::session();
+        if ($session->has("token")) {
+            $user = new ModelsAuth();
+            $token = $session->get("token");
+            $auth = new ModelsAuth();
+            if (!$auth->getUserPriv($token)->can_delete_book) {
+                // $this->output->set_status_header('404');
+                return $this->response->setStatusCode(404);
+            }
+            $data["user"] = array(
+                "email" => $user->getUserFromToken($token)->email,
+                "nama" => $user->getUserFromToken($token)->nama,
+                "token" => $user->getUserFromToken($token)->token,
+            );
+        } else {
+            // $data["token"] = "";
+            return redirect()->to("/auth/login");
+        };
+
+        $model = new ModelsBuku();
+        $data["buku"] = $model->getBuku($id)->getRow();
+        // return view("buku/hapus.php", $data);
+        echo view("layout/head", $data);
+        echo view("buku/hapus", $data);
+        echo view("layout/footer");
+    }
+    public function delete($id)
+    {
+        $session = \Config\Services::session();
+        $data["buku_active"] = true;
+        $token = $session->get("token");
+
+        $auth = new ModelsAuth();
+        if (!$auth->getUserPriv($token)->can_delete_book) {
+            // $this->output->set_status_header('404');
+            return $this->response->setStatusCode(404);
+        }
+        $model = new ModelsBuku();
+        $model->deleteBuku($id);
+        return redirect()->to("/buku");
+    }
+}
