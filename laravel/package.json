@@ -24,7 +24,7 @@
         "vue-template-compiler": "^2.6.10"
     },
     "dependencies": {
-        "datatables.net": "^1.10.21",
+        "datatables.net": "^1.10.22",
         "datatables.net-bs4": "^1.10.21",
         "datatables.net-responsive": "^2.2.4",
         "datatables.net-responsive-bs4": "^2.2.4"
